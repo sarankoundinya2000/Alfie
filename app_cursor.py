@@ -18,10 +18,11 @@ from pathlib import Path
 #print("Starting application...")
 
 # Load environment variables
-load_dotenv('groqapi.env')
+#load_dotenv('groqapi.env')
 
 # Initialize Groq client
-client = Groq(api_key=st.secrets['GROQ_API'])
+client = Groq(api_key=st.secrets['Groq_api_token'])
+#client = Groq(api_key=os.environ['GROQ_API_KEY'])
 
 # Define scopes for Google APIs
 SCOPES = [
@@ -58,6 +59,29 @@ def authenticate_google():
     if os.path.exists(TOKEN_FILE):
         creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
     if not creds or not creds.valid:
+        if not os.path.exists(CREDENTIALS_FILE):
+            st.warning("Google OAuth credentials.json not found. Please enter your Google OAuth Client details.")
+            client_id = st.text_input("Client ID")
+            client_secret = st.text_input("Client Secret", type="password")
+            redirect_uris = st.text_area("Redirect URIs (comma separated)")
+            auth_uri = st.text_input("Auth URI", value="https://accounts.google.com/o/oauth2/auth")
+            token_uri = st.text_input("Token URI", value="https://oauth2.googleapis.com/token")
+            project_id = st.text_input("Project ID")
+            if st.button("Save Credentials and Authenticate"):
+                creds_dict = {
+                    "installed": {
+                        "client_id": client_id,
+                        "project_id": project_id,
+                        "auth_uri": auth_uri,
+                        "token_uri": token_uri,
+                        "client_secret": client_secret,
+                        "redirect_uris": [uri.strip() for uri in redirect_uris.split(",") if uri.strip()]
+                    }
+                }
+                with open(CREDENTIALS_FILE, 'w') as f:
+                    json.dump(creds_dict, f)
+                st.success("credentials.json created. Please click Authenticate again.")
+                st.stop()
         flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
         creds = flow.run_local_server(port=0)
         with open(TOKEN_FILE, 'w') as token:
@@ -962,6 +986,9 @@ def search_attendee(calendar_service, name):
         return []
 
 if __name__ == "__main__":
+    if not os.path.exists(CREDENTIALS_FILE):
+        authenticate_google()  # This will show the UI and stop if file is missing
+        exit()
     print("Starting main function...")
     main()
     print("Application finished running")
