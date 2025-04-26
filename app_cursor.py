@@ -21,7 +21,7 @@ from pathlib import Path
 #load_dotenv('groqapi.env')
 
 # Initialize Groq client
-client = Groq(api_key=st.secrets['Groq_api_token'])
+client = Groq(api_key=st.secrets['GROQ_API'])
 #client = Groq(api_key=os.environ['GROQ_API_KEY'])
 
 # Define scopes for Google APIs
